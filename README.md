@@ -15,7 +15,7 @@ The code is open source; the dataset and classifier weights are released under C
 
 ## Read with Hugging Face Datasets
 
-These examples use only Hugging Face Datasets (Python ≥ 3.10). Accept the license and confirm non-commercial use on the [dataset page](https://huggingface.co/datasets/Wayne42/gangqinpu), then install the library and sign in:
+Python ≥ 3.10. Accept the license and confirm non-commercial use on the [dataset page](https://huggingface.co/datasets/Wayne42/gangqinpu), then install and sign in:
 
 ```bash
 python -m pip install "datasets==4.4.1"
@@ -27,15 +27,9 @@ from datasets import load_dataset
 
 dataset = load_dataset("Wayne42/gangqinpu", token=True)
 sample = dataset["train"][0]
-performance_notes = sample["performance_notes"]
-score_notes = sample["score_notes"]
-alignment = sample["alignment"]
-beats = sample["beats"]
-notation = sample["notation"]
-pedal = sample["performance_pedal"]
 ```
 
-The default configuration contains 25 metadata columns plus `performance_notes`, `score_notes`, `alignment`, `beats`, `notation` and `performance_pedal`; original files are a separate configuration. See the [dataset card](https://huggingface.co/datasets/Wayne42/gangqinpu#dataset-structure) for field definitions, splits and limitations.
+The default configuration has 31 columns: 25 metadata fields plus `performance_notes`, `score_notes`, `alignment`, `beats`, `notation` and `performance_pedal`. See the [dataset card](https://huggingface.co/datasets/Wayne42/gangqinpu#dataset-structure) for the full schema and [splits](https://huggingface.co/datasets/Wayne42/gangqinpu#splits-and-groups).
 
 To stream the test split:
 
@@ -50,7 +44,7 @@ For reproducible Hub downloads, pass the same `revision` commit SHA to each conf
 
 ### Read local Parquet
 
-For downloaded Parquet files, set `root` to the dataset directory:
+Read the downloaded default shards:
 
 ```python
 from pathlib import Path
@@ -63,38 +57,21 @@ files = {
 }
 local_data = load_dataset("parquet", data_files=files, streaming=True)
 sample = next(iter(local_data["train"]))
-notation = sample["notation"]
-pedal = sample["performance_pedal"]
 ```
-
-This reads only the default shards. The `originals` configuration is optional.
 
 ### Score time in quarter notes
 
 `score_notes` includes `onset_quarter` and `duration_quarter` in quarter-note units; `time` and `duration` remain in score-MIDI seconds. Performance-note times are audio seconds.
 
-```python
-onsets = [note["onset_quarter"] for note in sample["score_notes"]]
-durations = [note["duration_quarter"] for note in sample["score_notes"]]
-```
-
-Alignment indices refer to the saved note order. See the [field definitions and alignment example](https://huggingface.co/datasets/Wayne42/gangqinpu#score-time-in-quarter-notes), including [score-time origins](https://huggingface.co/datasets/Wayne42/gangqinpu#score-time-origins).
+Alignment indices refer to the saved note order. See the [alignment example](https://huggingface.co/datasets/Wayne42/gangqinpu#score-time-in-quarter-notes) and [time-origin conversion](https://huggingface.co/datasets/Wayne42/gangqinpu#score-time-origins).
 
 ### Meter and key signatures
 
-```python
-beat = sample["beats"][0]
-meter = beat["time_signature"]
-beats_per_bar = beat["beats_per_bar"]
-key = beat["key_signature"]
-fifths = key["fifths"] if key is not None else None
-```
-
-Each beat carries the active score signatures. Key signatures are represented by their fifths value. See the [field definitions and measure-level example](https://huggingface.co/datasets/Wayne42/gangqinpu#meter-and-key-signatures).
+Each beat carries `time_signature`, `beats_per_bar` and `key_signature`. The key signature's `fifths` value counts sharps or flats. See the [field definitions and example](https://huggingface.co/datasets/Wayne42/gangqinpu#meter-and-key-signatures).
 
 ## Install
 
-Install the GitHub package for the construction pipeline, expressive-performance classification, or filesystem reading and original-file export.
+Install the package for construction, classification or original-file export:
 
 ```bash
 git clone https://github.com/wei-zeng98/gangqinpu
@@ -117,23 +94,21 @@ For the filesystem reader alone, use `pip install -e .`. The construction pipeli
 
 ### Optional original files and filesystem reader
 
-Select `name="originals"` to load the 11 original files per sample. The export helper restores them for the filesystem reader:
+Load `originals` to restore the 11 files per sample:
 
 ```python
 from datasets import load_dataset
 from gangqinpu import GangqinpuDataset, export_original_files
 
-dataset = load_dataset("Wayne42/gangqinpu", token=True)
 originals = load_dataset("Wayne42/gangqinpu", name="originals", token=True)
 asap = load_dataset("Wayne42/gangqinpu", name="asap_reference", token=True)
 # Use a directory without an existing manifest; reference files stay external.
 export_original_files(originals, dataset, "gangqinpu", references=asap)
 train = GangqinpuDataset("gangqinpu", split="train")
-train_sample = train[0]
-pairs = train_sample.note_alignment()  # observed matches; excludes interpolated notes
+pairs = train[0].note_alignment()  # observed matches; excludes interpolated notes
 ```
 
-Join the two primary configurations by `sample_id`. `originals` preserves the 11 files byte-for-byte; exporting restores `gangqinpu_v1.0.0/<sample_id>/` and the 25-column manifest `gangqinpu_meta_v1.0.0.csv`. The filesystem reader selects Gangqinpu rows; the manifest can also contain the 1,066 external (n)ASAP reference rows.
+Configurations join by `sample_id`. Export restores the files byte-for-byte under `gangqinpu_v1.0.0/<sample_id>/` and writes `gangqinpu_meta_v1.0.0.csv`. The filesystem reader selects Gangqinpu rows; optional `references=asap` adds the 1,066 external reference rows to the manifest.
 
 ```bash
 python examples/read_dataset.py --root gangqinpu
@@ -141,21 +116,9 @@ python examples/read_dataset.py --root gangqinpu
 
 ## Original file layout
 
-| File | Purpose |
-|---|---|
-| `metadata.json` | Source title, uploader account, page URL and publication date. The uploader is not necessarily the composer or performer. |
-| `audio_transkun.mid` | Raw Transkun v2 audio transcription. |
-| `performance_clean.mid` | Cleaned transcription used for raw alignment. |
-| `score_MS.mid` | Unfolded score MIDI, with realised grace notes and ornaments. |
-| `performance_align.npz` | Raw DualDTW matches, insertions and deletions. |
-| `score_refined.mid` | Refined score MIDI indexed by the refined alignment. |
-| `performance_refined.mid` | Refined performance MIDI, including interpolated notes. |
-| `performance_refined_align.npz` | Refined note indices, onset times, interpolation masks and diagnostics. |
-| `alignment_metadata.json` | Beats, downbeats, signatures, confidence, alignment statistics and classifier output. |
-| `performance_annotations.txt` | ASAP-style point events in performance/audio seconds. |
-| `midi_score_annotations.txt` | ASAP-style point events in score-MIDI seconds. |
+The 11 files include source metadata, raw/cleaned/refined MIDI, raw/refined alignment NPZ, and JSON/TSV annotations. See the [file table and format definitions](https://huggingface.co/datasets/Wayne42/gangqinpu#original-files-originalssplitifiles).
 
-The [dataset card](https://huggingface.co/datasets/Wayne42/gangqinpu#dataset-structure) documents all metadata columns, structured fields, NPZ arrays and JSON/TSV fields. Source audio, original CCMZ/MusicXML scores and (n)ASAP files are not bundled.
+Source audio, original CCMZ/MusicXML scores and (n)ASAP files are not bundled.
 
 ## Recover source files
 
@@ -173,16 +136,7 @@ Convert CCMZ to `score.musicxml` with a tool such as [ccmz-to-midi](https://gith
 
 `notation.version = 2` identifies the notation schema.
 
-| Data | Contents |
-|---|---|
-| `performance_notes` | Refined performance notes in audio seconds. |
-| `performance_pedal` | CC64 events `{time, value}` from `performance_clean.mid`; value ≥64 means pedal down. |
-| `score_notes` | Realized score-MIDI events, with seconds and quarter-note coordinates. |
-| `notation.parts` | Source part IDs and staff counts, including declared and inactive staves. |
-| `notation.notes` | Tie-merged source notes, staff/voice labels, grace flags and direct performance-note links. Grace duration is zero. |
-| `notation.measures` | Unfolded measure positions, lengths, meter and key-signature fifths. |
-| `notation.alignment_complete` | True when every performance note, including interpolated notes, has exactly one source-note link; it does not imply that all source notes are linked. |
-| `notation.issues` | Source/parsing diagnostics. |
+`notation` stores source parts, tie-merged notes, staff/voice labels, grace flags, unfolded measures, and direct performance-note links. Grace duration is zero. `alignment_complete` is true when every performance note, including interpolated notes, has exactly one source-note link; `issues` records extraction diagnostics.
 
 Indices are zero-based. `notation.notes[*].performance_note_index` indexes
 `performance_notes`; a missing link is null. `alignment.performance_note_indices[i]` links
@@ -190,9 +144,7 @@ Indices are zero-based. `notation.notes[*].performance_note_index` indexes
 `notation.measures`. Staff indices start at 0 within each part; voice integers
 are local labels. Unknown labels are null.
 
-Notation and beat quarter positions use the construction-score origin. Convert
-to the saved-MIDI origin by subtracting `notation.midi_origin_offset_quarter`.
-Performance notes, pedal and beat times are in audio seconds.
+Notation and beat quarter positions use the construction-score origin; subtract `notation.midi_origin_offset_quarter` for the saved-MIDI origin. Performance, beat and pedal timestamps are audio seconds. `performance_pedal` stores track-0 CC64 `{time, value}` events from `performance_clean.mid`; value ≥64 means pedal down.
 
 See the [dataset card](https://huggingface.co/datasets/Wayne42/gangqinpu#structured-notation)
 for complete field definitions. Example:
@@ -207,9 +159,7 @@ for note in matched[:3]:
 
 ### Build structured data
 
-For label extraction and packing, install `pip install -e ".[hub,notation]"`.
-Both tools parse recovered local `score.musicxml` at build time; their outputs
-contain structured labels and source hashes.
+Install `pip install -e ".[hub,notation]"` to extract labels and source hashes from recovered local `score.musicxml`:
 
 ```bash
 python tools/enrich_parquet.py --input OLD_PARQUET_ROOT \
