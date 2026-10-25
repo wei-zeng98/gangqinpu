@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.env
+.env.*
+models/
+gangqinpu_v1.0.0/
+gangqinpu_audio/
+.work/
+.pytest_cache/
