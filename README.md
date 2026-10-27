@@ -1,7 +1,7 @@
 # Gangqinpu: A Multi-Genre, Multi-Task Piano Dataset with Aligned Audio, MIDI, and Musical Scores
 
 <p align="center">
-  <a href="#paper"><img src="https://img.shields.io/badge/Gangqinpu%20Paper-arXiv%20%7C%20coming%20soon-B31B1B?style=flat-square" alt="Gangqinpu paper: arXiv coming soon"></a>
+  <a href="https://arxiv.org/abs/2610.34694"><img src="https://img.shields.io/badge/arXiv-2610.34694-B31B1B?style=flat-square" alt="Paper: arXiv 2610.34694"></a>
   <a href="https://huggingface.co/datasets/Wayne42/gangqinpu"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Gangqinpu%20Dataset-Hugging%20Face-FFD21E?style=flat-square" alt="Gangqinpu dataset on Hugging Face"></a>
 </p>
 
@@ -9,7 +9,7 @@ Official reader and construction code for Gangqinpu v1.0.0: **18,786 piano score
 
 The code is open source; the dataset and classifier weights are released under CC BY-NC-SA 4.0 for non-commercial use.
 
-- <a id="paper"></a>**Paper:** arXiv link coming soon.
+- <a id="paper"></a>**Paper:** [arXiv:2610.34694](https://arxiv.org/abs/2610.34694).
 - <a id="dataset"></a>**Dataset:** [Hugging Face](https://huggingface.co/datasets/Wayne42/gangqinpu).
 - **Code:** [GitHub](https://github.com/wei-zeng98/gangqinpu).
 
@@ -274,7 +274,10 @@ Code: [MIT](LICENSE), except the Apache-2.0 CLAP converter. Classifier weights: 
   title  = {Gangqinpu: A Multi-Genre, Multi-Task Piano Dataset with Aligned Audio, {MIDI}, and Musical Scores},
   author = {Zeng, Wei and Mathur, Anvay and Wang, Ye},
   year   = {2026},
-  note   = {Manuscript}
+  eprint = {2610.34694},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.SD},
+  url    = {https://arxiv.org/abs/2610.34694}
 }
 ```
 
